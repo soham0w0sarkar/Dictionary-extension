@@ -1,4 +1,5 @@
 const body = document.getElementsByTagName("body")[0];
+const history = [];
 
 const getSelectedText = () => {
   var text = "";
@@ -15,8 +16,10 @@ const getSelectedText = () => {
 
 const doSomethingWithSelectedText = async () => {
   var selectedText = getSelectedText();
-  if (selectedText) {
+  if (selectedText && !history.includes(selectedText)) {
     try {
+      history.push(selectedText);
+
       const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${selectedText}`;
       const response = await fetch(url);
       const [data] = await response.json();
@@ -25,8 +28,9 @@ const doSomethingWithSelectedText = async () => {
       selectedText =
         selectedText.charAt(0).toUpperCase() + selectedText.slice(1);
 
-      const popupcontent = `<div class="word"><h1>${selectedText}</h1></div>
-                              <div class="content">
+      const popupcontent = `  <button class="close">X</button>
+                              <div class="popup__title"><h1 class="word">${selectedText}</h1></div>
+                                <div class="content">
                                 <ul class="list"></ul>
                               </div>`;
 
@@ -36,22 +40,27 @@ const doSomethingWithSelectedText = async () => {
       body.appendChild(popup);
 
       const list = document.querySelector(".list");
-      console.log(list);
 
       for (let i = 0; i < data.meanings.length; i++) {
         const meanings = data.meanings[i];
         const partOfSpeech = meanings.partOfSpeech;
-        const definitions = meanings.definitions[0].definition;
-        const example = meanings.definitions[0].example;
+        const definitions = meanings.definitions[0].definition
+          ? meanings.definitions[0].definition
+          : "No definition found";
+        const example = meanings.definitions[0].example
+          ? meanings.definitions[0].example
+          : "No example found";
 
-        const listItem = `<li><span class="partOfSpeech">${partOfSpeech}</span> ${definitions} <span class="example">"${example}"</span></li>`;
+        const listItem = `<li class ="content"><div class="partOfSpeech">${partOfSpeech}</div>Definition: ${definitions} <div class="example">Example: ${example}</div></li>`;
 
-        list.innerHTML += listItem;
+        list.innerHTML = listItem;
+
+        const close = document.querySelector(".close");
+
+        close.addEventListener("click", () => {
+          popup.remove();
+        });
       }
-
-      popup.innerHTML = popupcontent;
-
-      console.log(data);
     } catch (error) {
       console.log(error);
     }
